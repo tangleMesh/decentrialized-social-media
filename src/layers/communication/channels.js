@@ -1,5 +1,10 @@
 const Hash = require ("../../utilities/hash");
 
+const NetworkMessageTransportation = require ("../network/message-transportation");
+const NetworkMessage = require ("../network/message");
+
+const CommunicationMessage = require ("./messages");
+
 class CommunicationChannel {
 
     // Static properties
@@ -15,6 +20,7 @@ class CommunicationChannel {
     static get USER_ROLE_READER () {
         return "reader";
     }
+
 
     // Object methods
 
@@ -67,7 +73,9 @@ class CommunicationChannel {
 
     get Admins () {
         // TODO:
-        return [];
+        return [
+            global.test.user,
+        ];
     }
 
     get IsPublic () {
@@ -78,41 +86,45 @@ class CommunicationChannel {
         if (!this.Participants.includes (author)) {
             throw Error (`The author ${author.Identifier} is not allowed to publish messages in this channel ${this.Identifier}!`);
         }
-        // TODO: send message to communication layer
+
+        // Set channel if not set already
+        if (message.Channel === null) {
+            message.Channel = this;
+        }
+
+        const msg = new NetworkMessage (null, await message.serialize (), "/" + this.Identifier.substr (0, 24));
+        const networkMessage = await NetworkMessageTransportation.NETWORK_INTERFACE.sendMessage (msg);
+        return networkMessage;
     }
 
-    subscribeMessages (callback = async (channel, message) => {}, lastMessage = null) {
+    async sendActionMessage (author, message, receiverUser = null) {
+        if (!this.Admins.includes (author)) {
+            throw Error (`The author ${author.Identifier} is not allowed to publish messages in this channel ${this.Identifier}!`);
+        }
+
+        // Set channel if not set already
+        if (message.Channel === null) {
+            message.Channel = this;
+        }
+
+        const msg = new NetworkMessage (null, await message.serialize (), "/" + (receiverUser ? receiverUser : this).Identifier.substr (0, 24));
+        const networkMessage = await NetworkMessageTransportation.NETWORK_INTERFACE.sendMessage (msg);
+        return networkMessage;
+    }
+
+    async subscribeMessages (callback = async (channel, message) => {}, lastMessage = null) {
         // TODO: receive all missing messages since lastMessage + regularily fetch new messages
         // If lastMessage is NULL, simply only fetch new messages
-        // callback (this, );
-    }
-
-    async deleteMessage (executingUser, message) {
-        // TODO: check if executingUser has right to delete (author or admin) and send message to delete message
-    }
-
-    async addUser (executingUser, ...newUsers) {
-        // TODO: check if executingUser has right to add new users (admin) and send shared secret to all newUsers
-        // TODO: also send all the relevant channel information with it
-    }
-
-    async addUser (executingUser, ...usersToRemove) {
-        // TODO: check if executingUser has right to remove users (admin) and update the shared secret for all users kept
-    }
-
-    async updateUserRole (executingUser, user, role) {
-        // TODO: check if executingUser has right to update users role (admin) and update the user (eg. change shared adminSecret)
-    }
-
-    async updateName (executingUser, name) {
-        // TODO:
-    }
-
-    async updateCustomProperties (executingUser, properties = {}) {
-        // TODO: broadcast
-        this._customProperties = {
-            ...properties,
-        };
+        const unsubscribe = await NetworkMessageTransportation.NETWORK_INTERFACE.subscribeMessages (async (rawMessage) => {
+            const parsedMessage = await CommunicationMessage.Parse (rawMessage.Content);
+            // TODO: search user in local database by identifier and pass it
+            // TODO: replace global.test.user
+            const message = await CommunicationMessage.Create (parsedMessage, this, global.test.user);
+            return await callback (this, message);
+        }, {
+            indexPath: "/" + this.Identifier.substr (0, 24),
+        });
+        return unsubscribe;
     }
 
 }

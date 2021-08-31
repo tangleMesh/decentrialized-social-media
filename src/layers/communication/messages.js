@@ -1,5 +1,3 @@
-const { v4: uuidv4 } = require ("uuid");
-
 class CommunicationMessage {
 
     static async Parse (rawMessage) {
@@ -18,7 +16,7 @@ class CommunicationMessage {
 
         // Check keys
         const messageKeys = Object.keys (parsedMessage);
-        for (const key of ["id", "author", "channel", "isPublic", "payload", "signature"]) {
+        for (const key of ["author", "channel", "isEncrypted", "payload", "signature"]) {
             if (!messageKeys.includes (key)) {
                 throw new Error (`The required key "${key}" is missing in the message!`);
             }
@@ -35,9 +33,8 @@ class CommunicationMessage {
 
         // Verify signature
         let serializedMessage = {
-            id: parsedMessage.id,
             author: parsedMessage.author,
-            isPublic: parsedMessage.isPublic,
+            isEncrypted: parsedMessage.isEncrypted,
             channel: parsedMessage.channel,
             payload: parsedMessage.payload,
         };
@@ -47,27 +44,18 @@ class CommunicationMessage {
 
         // Decrypt the payload if required
         let payload = parsedMessage.payload;
-        if (parsedMessage.isPublic !== true) {
+        if (parsedMessage.isEncrypted === true) {
             payload = channel._readSecret.decrypt (payload);
         }
 
-        return new CommunicationMessage (author, payload, parsedMessage.id, parsedMessage.isPublic);
+        return new CommunicationMessage (author, payload, parsedMessage.isEncrypted);
     }
 
-    constructor (author, payload, id = null, isPublic = false) {
+    constructor (author, payload, isEncrypted = true) {
         this._author = author;
-        this._id = id;
         this._payload = payload;
-        this._isPublic = isPublic;
+        this._isEncrypted = isEncrypted;
         this._channel = null;
-
-        if (this._id === null) {
-            this._id = uuidv4 ();
-        }
-    }
-
-    get Identifier () {
-        return this._id;
     }
 
     set Channel (channel) {
@@ -102,8 +90,8 @@ class CommunicationMessage {
         return this._payload;
     }
 
-    get IsPublic () {
-        return this._isPublic;
+    get isEncrypted () {
+        return this._isEncrypted;
     }
 
     async serialize () {
@@ -114,15 +102,14 @@ class CommunicationMessage {
         let serializedMessage = {};
 
         // Meta information
-        serializedMessage.id = this.Identifier;
         serializedMessage.author = this.Author.Identifier;
-        serializedMessage.isPublic = this.IsPublic;
+        serializedMessage.isEncrypted = this.isEncrypted;
         serializedMessage.channel = this.Channel.Identifier;
 
         // Content information
         let payload = this.Payload;
-        if (!this.IsPublic) {
-            payload = this.Channel._publishSecret.encrypt (payload);
+        if (this.isEncrypted) {
+            payload = this.Channel._publishSecret.encrypt (JSON.stringify (payload));
         }
         serializedMessage.payload = payload;
 
