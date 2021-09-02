@@ -1,7 +1,5 @@
 const { ClientBuilder } = require ('@iota/client');
 
-const NetworkMessage = require ("./message");
-
 class NetworkMessageTransportationIOTA {
 
     constructor ({
@@ -30,16 +28,20 @@ class NetworkMessageTransportationIOTA {
                 .payload
                 .data, "hex")
             .toString ();
-        return new NetworkMessage (message.messageId, content);
+        return {
+            id: message.messageId,
+            content: content,
+            index: null,
+        };
     }
 
-    async sendMessage (networkMessage, index) {
+    async sendMessage (rawMessage, index) {
+        console.log ("rawMessage", rawMessage, "index", index);
         const sentMessage = await this.client.message ()
-            .index (index + (networkMessage.Index !== null ? networkMessage.Index : ""))
-            .data (networkMessage.Content)
+            .index (index)
+            .data (rawMessage)
             .submit ();
-            networkMessage._Identifier = sentMessage.messageId
-        return networkMessage;
+        return sentMessage.messageId;
     }
 
     async subscribeMessages (cb = async (rawMessage) => {}, index, { indexPath = null } = {}) {
@@ -55,16 +57,14 @@ class NetworkMessageTransportationIOTA {
                     console.error (err);
                     return;
                 }
-                await cb (
-                    new NetworkMessage (
-                        this.client.getMessageId (data.payload),
-                        Buffer.from (
-                            JSON.parse (data.payload).payload.data,
-                            "hex"
-                        ).toString ("utf-8"),
-                        topics [0].substr (index.length)
-                    )
-                );
+                await cb ({
+                    id: this.client.getMessageId (data.payload),
+                    content: Buffer.from (
+                        JSON.parse (data.payload).payload.data,
+                        "hex"
+                    ).toString ("utf-8"),
+                    index: topics [0].substr (index.length),
+                });
             });
         return () => {
             new Promise ((resolve, reject) => {
