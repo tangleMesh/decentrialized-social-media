@@ -1,4 +1,4 @@
-const { ClientBuilder } = require ('@iota/client');
+import { ClientBuilder } from '@iota/client';
 
 class NetworkMessageTransportationIOTA {
 
@@ -83,4 +83,4 @@ class NetworkMessageTransportationIOTA {
 
 }
 
-module.exports = NetworkMessageTransportationIOTA;
+export default NetworkMessageTransportationIOTA;

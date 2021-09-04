@@ -41,14 +41,20 @@ class StorageAdapter {
         }
     }
 
-    async getMessages (index) {
+    async getMessages (index, latestMessageIdentifier) {
         const messageIds = this._db.data.messageIndexes [index] || [];
+
+        const latestMessage = await this.getMessage (latestMessageIdentifier);
+
+        // Fetch all messages with this index
         let messages = [];
         for (const messageId of messageIds) {
             if (this._db.data.messages [messageId]) {
-                messages.push (
-                    this._db.data.messages [messageId]
-                );
+                if (!latestMessage || !latestMessage.timestamp || moment (this._db.data.messages [messageId].timestamp, "YYYY-MM-DD HH:mm:ss").isAfter (moment (latestMessage.timestamp, "YYYY-MM-DD HH:mm:ss"))) {
+                    messages.push (
+                        this._db.data.messages [messageId]
+                    );
+                }
             }
         }
         return messages;

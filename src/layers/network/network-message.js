@@ -50,6 +50,23 @@ class NetworkMessage {
         });
     }
 
+    toString () {
+        return {
+            identifier: this.Identifier,
+            index: this.Index,
+            content: this.Content,
+        }
+    }
+
+    static fromString (stringMessage) {
+        stringMessage = JSON.parse (stringMessage);
+        return new NetworkMessage (
+            stringMessage.identifier,
+            stringMessage.content,
+            stringMessage.index
+        );
+    }
+
 }
 
-module.exports = NetworkMessage;
+export default NetworkMessage;

@@ -1,5 +1,5 @@
-const NetworkMessageTransportationIOTA = require ("./message-transportation.iota");
-const NetworkMessage = require ("./message");
+import NetworkMessageTransportationIOTA from "./message-transportation.iota.js";
+import NetworkMessage from "./network-message.js";
 
 class NetworkMessageTransportation {
 
@@ -38,6 +38,17 @@ class NetworkMessageTransportation {
         return new NetworkMessage (rawMessage.id, rawMessage.content, rawMessage.index);
     }
 
+    async getMessages (index) {
+        const rawMessages = await this._network.getMessages (index);
+        let networkMessages = [];
+        for (const rawMessage of rawMessages) {
+            networkMessages.push (
+                new NetworkMessage (rawMessage.id, rawMessage.content, rawMessage.index)
+            );
+        }
+        return networkMessages;
+    }
+
     async sendMessage (networkMessage) {
         let messageIds = [];
         let messageIdx = 0;
@@ -52,7 +63,7 @@ class NetworkMessageTransportation {
         return networkMessage;
     }
 
-    async subscribeMessages (cb = async (rawMessage) => {}, options = {}) {
+    async subscribeMessages (cb = async (networkMessage) => {}, options = {}) {
         return await this._network.subscribeMessages (async (rawMessage) => {
             try {
                 // Parse and save new received message
@@ -92,4 +103,4 @@ class NetworkMessageTransportation {
 
 }
 
-module.exports = NetworkMessageTransportation;
+export default NetworkMessageTransportation;

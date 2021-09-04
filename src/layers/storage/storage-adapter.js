@@ -1,6 +1,6 @@
 import StorageAdapterLowDB from "./storage-adapter.lowdb.js";
 import moment from "moment";
-import NetworkMessage from "../network/message.js";
+import NetworkMessage from "../network/network-message.js";
 
 class StorageAdapter {
 
@@ -47,8 +47,8 @@ class StorageAdapter {
         });
     }
 
-    async getMessages (index) {
-        const messages = await this._adapter.getMessages (index);
+    async getMessages (index, latestMessageIdentifier = null) {
+        const messages = await this._adapter.getMessages (index, latestMessageIdentifier);
         let networkMessages = [];
         for (const message of messages) {
             networkMessages.push (
