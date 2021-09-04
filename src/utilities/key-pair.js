@@ -1,4 +1,4 @@
-const { generateKeyPairSync, createPublicKey, publicEncrypt, privateDecrypt, sign, verify } = require ("crypto");
+import { generateKeyPairSync, createPublicKey, publicEncrypt, privateDecrypt, sign, verify } from "crypto";
 
 class KeyPair {
 
@@ -71,7 +71,7 @@ class KeyPair {
     }
 
     // Source: https://www.sohamkamani.com/nodejs/rsa-encryption/
-    decrypto (data) {
+    decrypt (data) {
         try {
             const decryptedData = privateDecrypt (
                 {
@@ -99,4 +99,4 @@ class KeyPair {
 
 }
 
-module.exports = KeyPair;
+export default KeyPair;

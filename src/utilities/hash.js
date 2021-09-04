@@ -1,4 +1,4 @@
-const { createHash } = require ("crypto");
+import { createHash } from "crypto";
 
 class Hash {
 
@@ -11,4 +11,4 @@ class Hash {
 
 }
 
-module.exports = Hash;
+export default Hash;

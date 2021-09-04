@@ -1,4 +1,4 @@
-const { createHash, randomBytes, createDecipheriv, createCipheriv } = require ("crypto");
+import { createHash, randomBytes, createDecipheriv, createCipheriv } from "crypto";
 
 class Secret {
 
@@ -39,4 +39,4 @@ class Secret {
 
 }
 
-module.exports = Secret;
+export default Secret;
